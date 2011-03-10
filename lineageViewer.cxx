@@ -575,10 +575,10 @@ lineageViewer::~lineageViewer()
  {
 	  if(state)
 	  {
-	  	this->m_backPlane->SetInput(
-	  			this->m_graphToPolyData->GetOutput());
+	  	//this->m_backPlane->SetInput(
+	  	//		this->m_graphToPolyData->GetOutput());
 	  	this->m_planeMapper->SetInput(
-	  			this->m_backPlane->GetOutput());
+	  			this->m_graphToPolyData->GetOutput());
 	  	this->m_planeActor->SetMapper(this->m_planeMapper);
 	  	this->ui->graphViewWidget->GetRenderWindow()->GetRenderers()
 	  			->GetFirstRenderer()->AddActor(this->m_planeActor);
