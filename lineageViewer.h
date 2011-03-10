@@ -28,6 +28,12 @@ class vtkEventQtSlotConnect;
 class vtkObject;
 
 class vtkLookupTable;
+
+// back plane
+class vtkDelaunay2D;
+class vtkGraphToPolyData;
+class vtkPolyDataMapper;
+class vtkActor;
 /*
 class vtkTreeToQtModelAdapter;
 
@@ -108,6 +114,8 @@ public slots:
   void slotChangeLabel(QString array);
 
   void slotChangeStrategy(QString array);
+
+  void slotEnableBackPlane(int state);
 /*
   void slotChangeLabel(QString array);
 */
@@ -151,8 +159,12 @@ private:
   vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
   vtkSmartPointer<vtkAnnotationLink>     m_annotationLink;
   vtkSmartPointer<vtkEventQtSlotConnect> m_connect;
-  vtkSmartPointer<vtkLookupTable>        m_LUT;
+  vtkSmartPointer<vtkLookupTable>        m_lut;
   vtkSmartPointer<vtkTreeLayoutStrategy> m_treeLayoutStrategy;
+  vtkSmartPointer<vtkDelaunay2D>         m_backPlane;
+  vtkSmartPointer<vtkGraphToPolyData>    m_graphToPolyData;
+  vtkSmartPointer<vtkPolyDataMapper>     m_planeMapper;
+  vtkSmartPointer<vtkActor>              m_planeActor;
 
   // Designer form
   Ui_lineageViewer *ui;

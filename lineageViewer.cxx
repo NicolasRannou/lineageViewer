@@ -42,6 +42,12 @@
 #include "vtkSelectionNode.h"
 #include "vtkIdTypeArray.h"
 #include "vtkSelection.h"
+
+// back plane
+#include "vtkDelaunay2D.h"
+#include "vtkGraphToPolyData.h"
+#include "vtkPolyDataMapper.h"
+#include "vtkActor.h"
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -152,6 +158,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   end->InsertValue(h, 43);
   end->InsertValue(i, 37);
   graph->GetVertexData()->AddArray(end);
+
   //graph->GetEdgeData()->AddArray(end);
 
   vtkSmartPointer<vtkDoubleArray> xPos =
@@ -191,6 +198,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
     vtkSmartPointer<vtkGraphLayoutView>::New();
   this->m_treeGraphView->AddRepresentationFromInput(graph);
   this->m_treeGraphView->SetLayoutStrategyToTree();
+  //this->m_treeGraphView->
   this->m_treeGraphView->ResetCamera();
 
   this->m_treeGraphView->SetInteractor(
@@ -199,23 +207,31 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
       this->m_treeGraphView->GetRenderWindow() );
 
   // and the associated LUT
-  this->m_LUT = vtkSmartPointer<vtkLookupTable>::New();
-  this->m_LUT->SetHueRange(0.667, 0.0);
-  this->m_LUT->Build();
+  this->m_lut = vtkSmartPointer<vtkLookupTable>::New();
+  this->m_lut->SetHueRange(0.667, 0.0);
+  this->m_lut->Build();
 
   vtkSmartPointer<vtkViewTheme> theme =
     vtkSmartPointer<vtkViewTheme>::New();
-  theme->SetPointLookupTable(m_LUT);
-  theme->SetCellLookupTable(m_LUT);
+  theme->SetPointLookupTable(this->m_lut);
+  theme->SetCellLookupTable(this->m_lut);
 
   this->m_treeGraphView->ApplyViewTheme(theme);
 
-  // add the layou strategy (scale and circular)
+  // add the layout strategy (scale and circular)
   this->m_treeLayoutStrategy    = vtkSmartPointer<vtkTreeLayoutStrategy>::New();
   this->m_treeGraphView->SetLayoutStrategy(this->m_treeLayoutStrategy);
 
+  // create the back plane
+  this->m_backPlane = vtkSmartPointer<vtkDelaunay2D>::New();
+  this->m_graphToPolyData = vtkSmartPointer<vtkGraphToPolyData>::New();
+  this->m_graphToPolyData->SetInput(graph);
+  this->m_graphToPolyData->Update();
+  this->m_planeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  this->m_planeActor = vtkSmartPointer<vtkActor>::New();
+
   // add annotations
-  // anotations are ...
+  // annotations are ...
   this->m_annotationLink = vtkSmartPointer<vtkAnnotationLink>::New();
   this->m_treeGraphView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
   this->m_treeTableView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
@@ -250,6 +266,10 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   //layout strategy
   connect(this->ui->strategyComboBox, SIGNAL(currentIndexChanged(QString)),
     this, SLOT(slotChangeStrategy(QString)));
+
+  // back plane
+  connect(this->ui->backCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableBackPlane(int)));
 
   // Fill combo boxes
   // Update combo boxes (fill content with arrays names)
@@ -532,6 +552,28 @@ lineageViewer::~lineageViewer()
  //update visu
  this->m_treeGraphView->ResetCamera();
    this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotEnableBackPlane(int state)
+ {
+	  if(state)
+	  {
+	  	this->m_backPlane->SetInputConnection(
+	  			this->m_graphToPolyData->GetOutputPort());
+	  	this->m_planeMapper->SetInputConnection(
+	  			this->m_backPlane->GetOutputPort());
+	  	this->m_planeActor->SetMapper(this->m_planeMapper);
+	  	//this->ui->graphViewWidget->GetRenderWindow()->GetRenderer()->AddActor(this->m_planeActor);
+	  }
+	  else
+	  {
+	  	//this->ui->graphViewWidget->GetRenderWindow()->GetRenderer()->RemoveActor(this->m_planeActor);
+	  }
+
+	  //update visu
+	  this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
 /*
