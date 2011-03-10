@@ -146,16 +146,16 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->m_treeGraphView->Update();
 
   //Create the graph View
-  vtkSmartPointer<vtkGraphLayoutView> m_treeGraphLayoutView =
+  this->m_treeGraphLayoutView =
     vtkSmartPointer<vtkGraphLayoutView>::New();
-  m_treeGraphLayoutView->AddRepresentationFromInput(tree);
-  m_treeGraphLayoutView->SetLayoutStrategyToTree();
-  m_treeGraphLayoutView->SetInteractionModeTo2D();
-  m_treeGraphLayoutView->ResetCamera();
-  //m_treeGraphLayoutView->Render();
+  this->m_treeGraphLayoutView->AddRepresentationFromInput(tree);
+  this->m_treeGraphLayoutView->SetLayoutStrategyToTree();
+  this->m_treeGraphLayoutView->ResetCamera();
 
-  this->ui->graphViewWidget->GetRenderWindow()->AddRenderer(
-     m_treeGraphLayoutView->GetRenderer());
+  this->m_treeGraphLayoutView->SetInteractor(
+      this->ui->graphViewWidget->GetInteractor() );
+  this->ui->graphViewWidget->SetRenderWindow(
+      this->m_treeGraphLayoutView->GetRenderWindow() );
 
   /*
   this->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
