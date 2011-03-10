@@ -237,6 +237,10 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   connect(this->ui->labelComboBox, SIGNAL(currentIndexChanged(QString)),
     this, SLOT(slotChangeLabel(QString)));
 
+  //layout strategy
+  connect(this->ui->strategyComboBox, SIGNAL(currentIndexChanged(QString)),
+    this, SLOT(slotChangeStrategy(QString)));
+
   // Fill combo boxes
   // Update combo boxes (fill content with arrays names)
   // how many fields do we have?
@@ -463,6 +467,17 @@ lineageViewer::~lineageViewer()
  this->m_treeGraphView->SetVertexLabelArrayName(array.toLocal8Bit().data());
 
  //update visu
+   this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeStrategy(QString array)
+ {
+ this->m_treeGraphView->SetLayoutStrategy(array.toLocal8Bit().data());
+
+ //update visu
+ this->m_treeGraphView->ResetCamera();
    this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
