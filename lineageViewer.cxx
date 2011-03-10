@@ -11,8 +11,23 @@
 #include "ui_lineageViewer.h"
 #include "lineageViewer.h"
 
-// QT tree
+// QT  general
+#include <QGridLayout>
+
+// tab view
 #include <vtkQtTreeView.h>
+
+// graph view
+#include "vtkGraphLayoutView.h"
+#include "vtkRenderWindow.h"
+
+// create the tree
+#include "vtkMutableDirectedGraph.h"
+#include "vtkStringArray.h"
+#include "vtkDoubleArray.h"
+#include "vtkTree.h"
+
+#include "vtkDataSetAttributes.h"
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -78,11 +93,83 @@ lineageViewer::
 lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   QMainWindow( iParent, iFlags )
 {
+  // Create simple tree
+
+  vtkSmartPointer<vtkMutableDirectedGraph> graph =
+    vtkSmartPointer<vtkMutableDirectedGraph>::New();
+  vtkIdType a = graph->AddVertex();
+  vtkIdType b = graph->AddChild(a);
+  vtkIdType c = graph->AddChild(a);
+  vtkIdType d = graph->AddChild(b);
+  vtkIdType e = graph->AddChild(c);
+  vtkIdType f = graph->AddChild(c);
+
+  // First array: first column of the graph
+
+  vtkSmartPointer<vtkStringArray> cellType =
+      vtkSmartPointer<vtkStringArray>::New();
+  cellType->SetName("name");
+  cellType->InsertValue(a, "TypeA");
+  cellType->InsertValue(b, "TypeB");
+  cellType->InsertValue(c, "TypeC");
+  cellType->InsertValue(d, "TypeD");
+  cellType->InsertValue(e, "TypeE");
+  cellType->InsertValue(f, "TypeF");
+  graph->GetVertexData()->AddArray(cellType);
+
+  vtkSmartPointer<vtkDoubleArray> end =
+      vtkSmartPointer<vtkDoubleArray>::New();
+  end->SetName("EndTime");
+  end->InsertValue(a, 10);
+  end->InsertValue(b, 15);
+  end->InsertValue(c, 16);
+  end->InsertValue(d, 25);
+  end->InsertValue(e, 27);
+  end->InsertValue(f, 28);
+  graph->GetVertexData()->AddArray(end);
+
+  vtkSmartPointer<vtkTree> tree =
+    vtkSmartPointer<vtkTree>::New();
+  tree->CheckedShallowCopy(graph);
+
+
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
 
-  //Create the qtTreeView
-  this->m_qtTreeView          = vtkQtTreeView::New();
+  //Create the table View
+  this->m_treeGraphView          = vtkSmartPointer<vtkQtTreeView>::New();
+  //and add the widget
+  QGridLayout* tableLayout = new QGridLayout(this->ui->tableFrame);
+  tableLayout->addWidget(this->m_treeGraphView->GetWidget());
+
+  this->m_treeGraphView->AddRepresentationFromInput(tree);
+  this->m_treeGraphView->Update();
+
+  //Create the graph View
+  vtkSmartPointer<vtkGraphLayoutView> m_treeGraphLayoutView =
+    vtkSmartPointer<vtkGraphLayoutView>::New();
+  m_treeGraphLayoutView->AddRepresentationFromInput(tree);
+  m_treeGraphLayoutView->SetLayoutStrategyToTree();
+  m_treeGraphLayoutView->SetInteractionModeTo2D();
+  m_treeGraphLayoutView->ResetCamera();
+  //m_treeGraphLayoutView->Render();
+
+  this->ui->graphViewWidget->GetRenderWindow()->AddRenderer(
+     m_treeGraphLayoutView->GetRenderer());
+
+  /*
+  this->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
+
+  this->qvtkWidget->GetInteractor()->SetInteractorStyle(m_InteractorStyle3D);
+  m_InteractorStyle3D->EnablePickMode();
+
+  this->qvtkWidget->GetRenderWindow()->Render();*/
+
+  // Lineage Viewer needs to get my render window
+  //this->LineageView->SetInteractor(this->ui->vtkLineageViewWidget->GetInteractor());
+  //this->ui->vtkLineageViewWidget->SetRenderWindow(this->LineageView->GetRenderWindow());
+
+
 /*
   this->LineageReader       = vtkTreeReader::New();
   this->LineageView         = vtkLineageView::New();

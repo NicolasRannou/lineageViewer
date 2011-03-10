@@ -11,9 +11,15 @@
 
 #include <map>
 */
+
+#include "vtkSmartPointer.h"
+
 // Forward Qt class declarations
 class Ui_lineageViewer;
+//table view
 class vtkQtTreeView;
+//graph view
+class vtkGraphLayoutView;
 
 /*class vtkObject;
 
@@ -130,7 +136,8 @@ private:
   vtkEventQtSlotConnect* Connect;
 */
 private:
-  vtkQtTreeView*           m_qtTreeView;
+  vtkSmartPointer<vtkQtTreeView>      m_treeGraphView;
+  vtkSmartPointer<vtkGraphLayoutView> m_treeGraphLayoutView;
 
   // Designer form
   Ui_lineageViewer *ui;
