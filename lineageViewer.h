@@ -20,11 +20,14 @@ class Ui_lineageViewer;
 class vtkQtTreeView;
 //graph view
 class vtkGraphLayoutView;
+class vtkTreeLayoutStrategy;
 // connection between graph and table
 class vtkAnnotationLink;
 class vtkEventQtSlotConnect;
 
 class vtkObject;
+
+class vtkLookupTable;
 /*
 class vtkTreeToQtModelAdapter;
 
@@ -52,9 +55,9 @@ public:
   // Constructor/Destructor
   lineageViewer( QWidget * iParent = 0, Qt::WindowFlags iFlags = 0 );
   ~lineageViewer();
-/*
-public slots:
 
+public slots:
+/*
   // Application slots
   virtual void slotOpenLineageData();
   virtual void slotExit();
@@ -94,13 +97,13 @@ public slots:
   // Description:
   // Set the elbow angle
   void slotSetElbowAngle(int value);
-
+*/
   void slotEnableScale(int state);
   void slotChangeScale(QString array);
 
   void slotEnableColorCode(int state);
   void slotChangeColorCode(QString array);
-
+/*
   void slotChangeLabel(QString array);
 */
 protected:
@@ -143,6 +146,8 @@ private:
   vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
   vtkSmartPointer<vtkAnnotationLink>     m_annotationLink;
   vtkSmartPointer<vtkEventQtSlotConnect> m_connect;
+  vtkSmartPointer<vtkLookupTable>        m_LUT;
+  vtkSmartPointer<vtkTreeLayoutStrategy> m_treeLayoutStrategy;
 
   // Designer form
   Ui_lineageViewer *ui;

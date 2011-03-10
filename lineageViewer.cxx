@@ -20,6 +20,7 @@
 // graph view
 #include "vtkGraphLayoutView.h"
 #include "vtkRenderWindow.h"
+#include "vtkTreeLayoutStrategy.h"
 
 // create the tree
 #include "vtkMutableDirectedGraph.h"
@@ -34,6 +35,9 @@
 //connect table and graph
 #include "vtkAnnotationLink.h"
 #include <vtkEventQtSlotConnect.h>
+
+#include "vtkLookupTable.h"
+#include "vtkViewTheme.h"
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -109,6 +113,9 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   vtkIdType d = graph->AddChild(b);
   vtkIdType e = graph->AddChild(c);
   vtkIdType f = graph->AddChild(c);
+  vtkIdType g = graph->AddChild(c);
+  vtkIdType h = graph->AddChild(f);
+  vtkIdType i = graph->AddChild(f);
 
   // First array: first column of the graph
 
@@ -121,6 +128,9 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   cellType->InsertValue(d, "TypeD");
   cellType->InsertValue(e, "TypeE");
   cellType->InsertValue(f, "TypeF");
+  cellType->InsertValue(g, "TypeG");
+  cellType->InsertValue(h, "TypeH");
+  cellType->InsertValue(i, "TypeI");
   graph->GetVertexData()->AddArray(cellType);
 
   vtkSmartPointer<vtkDoubleArray> end =
@@ -132,15 +142,31 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   end->InsertValue(d, 25);
   end->InsertValue(e, 27);
   end->InsertValue(f, 28);
+  end->InsertValue(g, 30);
+  end->InsertValue(h, 43);
+  end->InsertValue(i, 37);
   graph->GetVertexData()->AddArray(end);
+
+  vtkSmartPointer<vtkDoubleArray> xPos =
+      vtkSmartPointer<vtkDoubleArray>::New();
+  xPos->SetName("XPos");
+  xPos->InsertValue(a, 113);
+  xPos->InsertValue(b, 51);
+  xPos->InsertValue(c, 77);
+  xPos->InsertValue(d, 98);
+  xPos->InsertValue(e, 51);
+  xPos->InsertValue(f, 50);
+  xPos->InsertValue(g, 70);
+  xPos->InsertValue(h, 116);
+  xPos->InsertValue(i, 119);
+  graph->GetVertexData()->AddArray(xPos);
+
+  this->ui = new Ui_lineageViewer;
+  this->ui->setupUi(this);
 
   vtkSmartPointer<vtkTree> tree =
     vtkSmartPointer<vtkTree>::New();
   tree->CheckedShallowCopy(graph);
-
-
-  this->ui = new Ui_lineageViewer;
-  this->ui->setupUi(this);
 
   //Create the table View
   this->m_treeTableView          = vtkSmartPointer<vtkQtTreeView>::New();
@@ -154,7 +180,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   //Create the graph View
   this->m_treeGraphView =
     vtkSmartPointer<vtkGraphLayoutView>::New();
-  this->m_treeGraphView->AddRepresentationFromInput(tree);
+  this->m_treeGraphView->AddRepresentationFromInput(graph);
   this->m_treeGraphView->SetLayoutStrategyToTree();
   this->m_treeGraphView->ResetCamera();
 
@@ -163,13 +189,28 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui->graphViewWidget->SetRenderWindow(
       this->m_treeGraphView->GetRenderWindow() );
 
+  // and the associated LUT
+  this->m_LUT = vtkSmartPointer<vtkLookupTable>::New();
+  this->m_LUT->SetHueRange(0.667, 0.0);
+  this->m_LUT->Build();
+
+  vtkSmartPointer<vtkViewTheme> theme =
+    vtkSmartPointer<vtkViewTheme>::New();
+  theme->SetPointLookupTable(m_LUT);
+
+  this->m_treeGraphView->ApplyViewTheme(theme);
+
+  // add the layou strategy (scale and circular)
+  this->m_treeLayoutStrategy    = vtkSmartPointer<vtkTreeLayoutStrategy>::New();
+  this->m_treeGraphView->SetLayoutStrategy(this->m_treeLayoutStrategy);
+
   // add annotations
   // anotations are ...
   this->m_annotationLink = vtkSmartPointer<vtkAnnotationLink>::New();
   this->m_treeGraphView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
   this->m_treeTableView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
 
-  // connect signals
+  // connect table and graph
   this->m_connect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
   this->m_connect->Connect(this->m_treeTableView->GetRepresentation(),
     vtkCommand::SelectionChangedEvent,
@@ -177,6 +218,38 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->m_connect->Connect(this->m_treeGraphView->GetRepresentation(),
     vtkCommand::SelectionChangedEvent,
     this, SLOT(selectionChanged(vtkObject*, unsigned long, void*, void*)));
+
+  // color coding
+  connect(this->ui->colorCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableColorCode(int)));
+  connect(this->ui->colorComboBox, SIGNAL(currentIndexChanged(QString)),
+    this, SLOT(slotChangeColorCode(QString)));
+
+  // scaling
+  connect(this->ui->scaleCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableScale(int)));
+  connect(this->ui->scaleComboBox, SIGNAL(currentIndexChanged(QString)),
+    this, SLOT(slotChangeScale(QString)));
+
+  // Fill combo boxes
+  // Update combo boxes (fill content with arrays names)
+  // how many fields do we have?
+  int numberOfArrays = graph->GetVertexData()->GetNumberOfArrays();
+  this->ui->colorComboBox->clear();
+  this->ui->scaleComboBox->clear();
+
+  // fill comboxes according to the data
+  for(int i=0;i<numberOfArrays; i++)
+    {
+    const char* name =
+    		graph->GetVertexData()->GetArrayName(i);
+    // if data array (i.e. numbers), add it
+    if(graph->GetVertexData()->GetArray(name))
+      {
+      this->ui->colorComboBox->addItem(name);
+      this->ui->scaleComboBox->addItem(name);
+      }
+    }
 
   /*125   Connections->Connect(
    126     this->TableView->GetRepresentation(),
@@ -295,6 +368,8 @@ lineageViewer::~lineageViewer()
                                        void* callData)
  {
    vtkSelection* selection = reinterpret_cast<vtkSelection*>(callData);
+   // update selection and only look at the vertices
+   //here...
    if(selection)
    {
      this->m_treeTableView->GetRepresentation()->GetAnnotationLink()->
@@ -303,10 +378,66 @@ lineageViewer::~lineageViewer()
        SetCurrentSelection(selection);
 
      this->m_treeTableView->Update();
-     this->m_treeGraphView->Update();
      this->m_treeGraphView->Render();
    }
  }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotEnableColorCode(int state)
+ {
+	 /*
+	  * \todo shouldnt we define array to display somewhere?
+	  */
+   if(state)
+   {
+  	 this->m_treeGraphView->ColorVerticesOn();
+  	 this->m_treeGraphView->ColorEdgesOn();
+   }
+   else
+   {
+  	 this->m_treeGraphView->ColorVerticesOff();
+  	 this->m_treeGraphView->ColorEdgesOff();
+   }
+
+   //update visu
+   this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeColorCode(QString array)
+ {
+ this->m_treeGraphView->SetVertexColorArrayName(array.toLocal8Bit().data());
+ this->m_treeGraphView->SetEdgeColorArrayName(array.toLocal8Bit().data());
+
+ //update visu
+   this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotEnableScale(int state)
+ {
+	  //scale
+	  this->m_treeLayoutStrategy->SetDistanceArrayName
+	  (state ? this->ui->scaleComboBox->currentText().toLocal8Bit().data() : NULL);
+
+	  //update visu
+	  this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeScale(QString array)
+ {
+ this->m_treeLayoutStrategy->SetDistanceArrayName(array.toLocal8Bit().data());
+
+ //update visu
+   this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
 /*
 //----------------------------------------------------------------------------
 // Description:
