@@ -103,6 +103,9 @@ public slots:
 
   void slotEnableColorCode(int state);
   void slotChangeColorCode(QString array);
+
+  void slotEnableLabel(int state);
+  void slotChangeLabel(QString array);
 /*
   void slotChangeLabel(QString array);
 */

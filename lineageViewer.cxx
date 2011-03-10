@@ -231,18 +231,26 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   connect(this->ui->scaleComboBox, SIGNAL(currentIndexChanged(QString)),
     this, SLOT(slotChangeScale(QString)));
 
+  // labeling
+  connect(this->ui->labelCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableLabel(int)));
+  connect(this->ui->labelComboBox, SIGNAL(currentIndexChanged(QString)),
+    this, SLOT(slotChangeLabel(QString)));
+
   // Fill combo boxes
   // Update combo boxes (fill content with arrays names)
   // how many fields do we have?
   int numberOfArrays = graph->GetVertexData()->GetNumberOfArrays();
   this->ui->colorComboBox->clear();
   this->ui->scaleComboBox->clear();
+  this->ui->labelComboBox->clear();
 
   // fill comboxes according to the data
   for(int i=0;i<numberOfArrays; i++)
     {
     const char* name =
     		graph->GetVertexData()->GetArrayName(i);
+    this->ui->labelComboBox->addItem(name);
     // if data array (i.e. numbers), add it
     if(graph->GetVertexData()->GetArray(name))
       {
@@ -416,7 +424,6 @@ lineageViewer::~lineageViewer()
  }
  //----------------------------------------------------------------------------
 
-
  //----------------------------------------------------------------------------
  void lineageViewer::slotEnableScale(int state)
  {
@@ -438,7 +445,29 @@ lineageViewer::~lineageViewer()
    this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotEnableLabel(int state)
+ {
+	  //scale
+	  this->m_treeGraphView->SetVertexLabelVisibility(state);
+
+	  //update visu
+	  this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeLabel(QString array)
+ {
+ this->m_treeGraphView->SetVertexLabelArrayName(array.toLocal8Bit().data());
+
+ //update visu
+   this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
 /*
+ *
 //----------------------------------------------------------------------------
 // Description:
 // Set the global time value for all views
