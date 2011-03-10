@@ -26,6 +26,7 @@
 #include "vtkMutableDirectedGraph.h"
 #include "vtkStringArray.h"
 #include "vtkDoubleArray.h"
+#include "vtkPoints.h"
 #include "vtkTree.h"
 
 #include "vtkDataSetAttributes.h"
@@ -48,6 +49,7 @@
 #include "vtkGraphToPolyData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkActor.h"
+#include "vtkRendererCollection.h"
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -144,6 +146,19 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   cellType->InsertValue(i, "TypeI");
   graph->GetVertexData()->AddArray(cellType);
   //graph->GetEdgeData()->AddArray(cellType);
+
+  vtkSmartPointer<vtkPoints> points =
+      vtkSmartPointer<vtkPoints>::New();
+  points->InsertNextPoint(0.0, 0.5, 0.0);
+  points->InsertNextPoint(1.0, 0.0, 0.0);
+  points->InsertNextPoint(0.0, 1.0, 0.0);
+  points->InsertNextPoint(0.0, 0.0, 2.0);
+  points->InsertNextPoint(0.0, 10.0, 2.0);
+  points->InsertNextPoint(10.0, 0.0, 2.0);
+  points->InsertNextPoint(1.0, 3.0, 2.0);
+  points->InsertNextPoint(1.0, 20.0, 5.0);
+  points->InsertNextPoint(30.0, 1.0, 2.0);
+  graph->SetPoints(points);
 
   vtkSmartPointer<vtkDoubleArray> end =
       vtkSmartPointer<vtkDoubleArray>::New();
@@ -560,16 +575,18 @@ lineageViewer::~lineageViewer()
  {
 	  if(state)
 	  {
-	  	this->m_backPlane->SetInputConnection(
-	  			this->m_graphToPolyData->GetOutputPort());
-	  	this->m_planeMapper->SetInputConnection(
-	  			this->m_backPlane->GetOutputPort());
+	  	this->m_backPlane->SetInput(
+	  			this->m_graphToPolyData->GetOutput());
+	  	this->m_planeMapper->SetInput(
+	  			this->m_backPlane->GetOutput());
 	  	this->m_planeActor->SetMapper(this->m_planeMapper);
-	  	//this->ui->graphViewWidget->GetRenderWindow()->GetRenderer()->AddActor(this->m_planeActor);
+	  	this->ui->graphViewWidget->GetRenderWindow()->GetRenderers()
+	  			->GetFirstRenderer()->AddActor(this->m_planeActor);
 	  }
 	  else
 	  {
-	  	//this->ui->graphViewWidget->GetRenderWindow()->GetRenderer()->RemoveActor(this->m_planeActor);
+	  	this->ui->graphViewWidget->GetRenderWindow()->GetRenderers()
+	  			->GetFirstRenderer()->RemoveActor(this->m_planeActor);
 	  }
 
 	  //update visu
