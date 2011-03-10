@@ -108,6 +108,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   QMainWindow( iParent, iFlags )
 {
   // Create simple tree
+  // should add edges manually for the coloring
 
   vtkSmartPointer<vtkMutableDirectedGraph> graph =
     vtkSmartPointer<vtkMutableDirectedGraph>::New();
@@ -136,6 +137,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   cellType->InsertValue(h, "TypeH");
   cellType->InsertValue(i, "TypeI");
   graph->GetVertexData()->AddArray(cellType);
+  //graph->GetEdgeData()->AddArray(cellType);
 
   vtkSmartPointer<vtkDoubleArray> end =
       vtkSmartPointer<vtkDoubleArray>::New();
@@ -150,6 +152,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   end->InsertValue(h, 43);
   end->InsertValue(i, 37);
   graph->GetVertexData()->AddArray(end);
+  //graph->GetEdgeData()->AddArray(end);
 
   vtkSmartPointer<vtkDoubleArray> xPos =
       vtkSmartPointer<vtkDoubleArray>::New();
@@ -164,6 +167,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   xPos->InsertValue(h, 116);
   xPos->InsertValue(i, 119);
   graph->GetVertexData()->AddArray(xPos);
+  //graph->GetEdgeData()->AddArray(xPos);
 
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
@@ -202,6 +206,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   vtkSmartPointer<vtkViewTheme> theme =
     vtkSmartPointer<vtkViewTheme>::New();
   theme->SetPointLookupTable(m_LUT);
+  theme->SetCellLookupTable(m_LUT);
 
   this->m_treeGraphView->ApplyViewTheme(theme);
 
