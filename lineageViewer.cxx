@@ -38,6 +38,10 @@
 
 #include "vtkLookupTable.h"
 #include "vtkViewTheme.h"
+
+#include "vtkSelectionNode.h"
+#include "vtkIdTypeArray.h"
+#include "vtkSelection.h"
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -164,6 +168,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
 
+  // we need a tree as input for the table
   vtkSmartPointer<vtkTree> tree =
     vtkSmartPointer<vtkTree>::New();
   tree->CheckedShallowCopy(graph);
@@ -384,13 +389,64 @@ lineageViewer::~lineageViewer()
    //here...
    if(selection)
    {
-     this->m_treeTableView->GetRepresentation()->GetAnnotationLink()->
-       SetCurrentSelection(selection);
-     this->m_treeGraphView->GetRepresentation()->GetAnnotationLink()->
-       SetCurrentSelection(selection);
+  	 // Create a new selection without edges
+  	 vtkSelection* s = vtkSelection::New();
 
-     this->m_treeTableView->Update();
-     this->m_treeGraphView->Render();
+  	 vtkSelectionNode* vertices;
+  	     vtkSelectionNode* edges;
+  	     if(selection->GetNode(0)->GetFieldType() == vtkSelectionNode::VERTEX)
+  	       {
+  	       vertices = selection->GetNode(0);
+  	       s->AddNode(vertices);
+  	       }
+  	     else if(selection->GetNode(0)->GetFieldType() == vtkSelectionNode::EDGE)
+  	       {
+  	       edges = selection->GetNode(0);
+  	       }
+
+  	     if(selection->GetNode(1)->GetFieldType() == vtkSelectionNode::VERTEX)
+  	       {
+  	       vertices = selection->GetNode(1);
+  	       s->AddNode(vertices);
+  	       }
+  	     else if(selection->GetNode(1)->GetFieldType() == vtkSelectionNode::EDGE)
+  	       {
+  	       edges = selection->GetNode(1);
+  	       }
+
+  	     vtkIdTypeArray* vertexList = vtkIdTypeArray::SafeDownCast(vertices->GetSelectionList());
+  	     std::cout << "There are " << vertexList->GetNumberOfTuples() << " vertices selected." << std::endl;
+
+  	     if(vertexList->GetNumberOfTuples() > 0)
+  	       {
+  	       std::cout << "Vertex Ids: ";
+  	       }
+  	     for(vtkIdType i = 0; i < vertexList->GetNumberOfTuples(); i++)
+  	       {
+  	       std::cout << vertexList->GetValue(i) << " ";
+  	       }
+
+  	     std::cout << std::endl;
+  	     vtkIdTypeArray* edgeList = vtkIdTypeArray::SafeDownCast(edges->GetSelectionList());
+  	     std::cout << "There are " << edgeList->GetNumberOfTuples() << " edges selected." << std::endl;
+  	     if(edgeList->GetNumberOfTuples() > 0)
+  	       {
+  	       std::cout << "Edge Ids: ";
+  	       }
+
+  	     for(vtkIdType i = 0; i < edgeList->GetNumberOfTuples(); i++)
+  	       {
+  	       std::cout << edgeList->GetValue(i) << " ";
+  	       }
+  	     std::cout << std::endl;
+
+  	     this->m_treeTableView->GetRepresentation()->GetAnnotationLink()->
+  	       SetCurrentSelection(selection);
+  	     this->m_treeGraphView->GetRepresentation()->GetAnnotationLink()->
+  	       SetCurrentSelection(s);
+
+  	     this->m_treeTableView->Update();
+  	     this->m_treeGraphView->Render();
    }
  }
  //----------------------------------------------------------------------------
@@ -401,16 +457,8 @@ lineageViewer::~lineageViewer()
 	 /*
 	  * \todo shouldnt we define array to display somewhere?
 	  */
-   if(state)
-   {
-  	 this->m_treeGraphView->ColorVerticesOn();
-  	 this->m_treeGraphView->ColorEdgesOn();
-   }
-   else
-   {
-  	 this->m_treeGraphView->ColorVerticesOff();
-  	 this->m_treeGraphView->ColorEdgesOff();
-   }
+   this->m_treeGraphView->SetColorVertices(state);
+   this->m_treeGraphView->SetColorEdges(state);
 
    //update visu
    this->m_treeGraphView->Render();
