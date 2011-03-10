@@ -20,9 +20,12 @@ class Ui_lineageViewer;
 class vtkQtTreeView;
 //graph view
 class vtkGraphLayoutView;
+// connection between graph and table
+class vtkAnnotationLink;
+class vtkEventQtSlotConnect;
 
-/*class vtkObject;
-
+class vtkObject;
+/*
 class vtkTreeToQtModelAdapter;
 
 // Forward VTK class declarations
@@ -99,11 +102,11 @@ public slots:
   void slotChangeColorCode(QString array);
 
   void slotChangeLabel(QString array);
-
+*/
 protected:
 
 protected slots:
-
+/*
   // Description:
   // Set the global time value for just the tree layout
   void slotGlobalTimeValueChanging(int value);
@@ -111,11 +114,11 @@ protected slots:
   // Description:
   // Set the global time value for all views
   void slotSetGlobalTimeValue(int value);
-
+*/
   // Description:
   // Called when selection changed in the Qt tree view
-  void slotSelectionChanged();
-
+  void selectionChanged(vtkObject*, unsigned long,void* ,void* );
+/*
 private:
 
   // Methods
@@ -136,8 +139,10 @@ private:
   vtkEventQtSlotConnect* Connect;
 */
 private:
-  vtkSmartPointer<vtkQtTreeView>      m_treeGraphView;
-  vtkSmartPointer<vtkGraphLayoutView> m_treeGraphLayoutView;
+  vtkSmartPointer<vtkQtTreeView>         m_treeTableView;
+  vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
+  vtkSmartPointer<vtkAnnotationLink>     m_annotationLink;
+  vtkSmartPointer<vtkEventQtSlotConnect> m_connect;
 
   // Designer form
   Ui_lineageViewer *ui;

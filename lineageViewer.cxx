@@ -28,6 +28,12 @@
 #include "vtkTree.h"
 
 #include "vtkDataSetAttributes.h"
+
+#include "vtkDataRepresentation.h"
+
+//connect table and graph
+#include "vtkAnnotationLink.h"
+#include <vtkEventQtSlotConnect.h>
 /*
 #include <vtkAlgorithmOutput.h>
 #include <vtkAnnotationLink.h>
@@ -137,25 +143,47 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui->setupUi(this);
 
   //Create the table View
-  this->m_treeGraphView          = vtkSmartPointer<vtkQtTreeView>::New();
+  this->m_treeTableView          = vtkSmartPointer<vtkQtTreeView>::New();
   //and add the widget
   QGridLayout* tableLayout = new QGridLayout(this->ui->tableFrame);
-  tableLayout->addWidget(this->m_treeGraphView->GetWidget());
+  tableLayout->addWidget(this->m_treeTableView->GetWidget());
 
-  this->m_treeGraphView->AddRepresentationFromInput(tree);
-  this->m_treeGraphView->Update();
+  this->m_treeTableView->AddRepresentationFromInput(tree);
+  this->m_treeTableView->Update();
 
   //Create the graph View
-  this->m_treeGraphLayoutView =
+  this->m_treeGraphView =
     vtkSmartPointer<vtkGraphLayoutView>::New();
-  this->m_treeGraphLayoutView->AddRepresentationFromInput(tree);
-  this->m_treeGraphLayoutView->SetLayoutStrategyToTree();
-  this->m_treeGraphLayoutView->ResetCamera();
+  this->m_treeGraphView->AddRepresentationFromInput(tree);
+  this->m_treeGraphView->SetLayoutStrategyToTree();
+  this->m_treeGraphView->ResetCamera();
 
-  this->m_treeGraphLayoutView->SetInteractor(
+  this->m_treeGraphView->SetInteractor(
       this->ui->graphViewWidget->GetInteractor() );
   this->ui->graphViewWidget->SetRenderWindow(
-      this->m_treeGraphLayoutView->GetRenderWindow() );
+      this->m_treeGraphView->GetRenderWindow() );
+
+  // add annotations
+  // anotations are ...
+  this->m_annotationLink = vtkSmartPointer<vtkAnnotationLink>::New();
+  this->m_treeGraphView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
+  this->m_treeTableView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
+
+  // connect signals
+  this->m_connect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
+  this->m_connect->Connect(this->m_treeTableView->GetRepresentation(),
+    vtkCommand::SelectionChangedEvent,
+    this, SLOT(selectionChanged(vtkObject*, unsigned long, void*, void*)));
+  this->m_connect->Connect(this->m_treeGraphView->GetRepresentation(),
+    vtkCommand::SelectionChangedEvent,
+    this, SLOT(selectionChanged(vtkObject*, unsigned long, void*, void*)));
+
+  /*125   Connections->Connect(
+   126     this->TableView->GetRepresentation(),
+   127     vtkCommand::SelectionChangedEvent,
+   128     this,
+   129     SLOT(selectionChanged(vtkObject*, unsigned long, void*, void*)));
+   */
 
   /*
   this->qvtkWidget->GetRenderWindow()->AddRenderer(renderer);
@@ -254,6 +282,31 @@ lineageViewer::~lineageViewer()
 */
 }
 //----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+
+ // This defines the QT slot. They way it works is first get the vtkSelection,
+ // push it to the default vtkAnnotationLink associated with each
+ // vtkDataRepresentation of each view type and then call Update or
+ // Render (if it is a vtkRenderView) on each view.
+ void lineageViewer::selectionChanged(vtkObject*,
+                                       unsigned long,
+                                       void* vtkNotUsed(clientData),
+                                       void* callData)
+ {
+   vtkSelection* selection = reinterpret_cast<vtkSelection*>(callData);
+   if(selection)
+   {
+     this->m_treeTableView->GetRepresentation()->GetAnnotationLink()->
+       SetCurrentSelection(selection);
+     this->m_treeGraphView->GetRepresentation()->GetAnnotationLink()->
+       SetCurrentSelection(selection);
+
+     this->m_treeTableView->Update();
+     this->m_treeGraphView->Update();
+     this->m_treeGraphView->Render();
+   }
+ }
 /*
 //----------------------------------------------------------------------------
 // Description:
