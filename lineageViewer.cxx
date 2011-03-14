@@ -145,7 +145,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   cellType->InsertValue(h, "TypeH");
   cellType->InsertValue(i, "TypeI");
   graph->GetVertexData()->AddArray(cellType);
-  //graph->GetEdgeData()->AddArray(cellType);
+  graph->GetEdgeData()->AddArray(cellType);
 
   vtkSmartPointer<vtkPoints> points =
       vtkSmartPointer<vtkPoints>::New();
@@ -176,7 +176,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
 
   //graph->GetEdgeData()->AddArray(end);
 
-  vtkSmartPointer<vtkDoubleArray> xPos =
+ /* vtkSmartPointer<vtkDoubleArray> xPos =
       vtkSmartPointer<vtkDoubleArray>::New();
   xPos->SetName("XPos");
   xPos->InsertValue(a, 113);
@@ -188,7 +188,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   xPos->InsertValue(g, 70);
   xPos->InsertValue(h, 116);
   xPos->InsertValue(i, 119);
-  graph->GetVertexData()->AddArray(xPos);
+  graph->AddArray(xPos);*/
   //graph->GetEdgeData()->AddArray(xPos);
 
   this->ui = new Ui_lineageViewer;
@@ -213,7 +213,6 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
     vtkSmartPointer<vtkGraphLayoutView>::New();
   this->m_treeGraphView->AddRepresentationFromInput(graph);
   this->m_treeGraphView->SetLayoutStrategyToTree();
-  //this->m_treeGraphView->
   this->m_treeGraphView->ResetCamera();
 
   this->m_treeGraphView->SetInteractor(
@@ -235,6 +234,11 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
 
   // add the layout strategy (scale and circular)
   this->m_treeLayoutStrategy    = vtkSmartPointer<vtkTreeLayoutStrategy>::New();
+  // radial layout default values
+  this->m_treeLayoutStrategy->SetAngle(90);
+  this->m_treeLayoutStrategy->SetRadial(false);
+  // Log
+  //this->m_treeLayoutStrategy->SetLogSpacingValue(1);
   this->m_treeGraphView->SetLayoutStrategy(this->m_treeLayoutStrategy);
 
   // create the back plane
@@ -250,6 +254,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->m_annotationLink = vtkSmartPointer<vtkAnnotationLink>::New();
   this->m_treeGraphView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
   this->m_treeTableView->GetRepresentation()->SetAnnotationLink(this->m_annotationLink);
+  //this->m_annotationLink->AddObserver("AnnotationChangedEvent", selectionCallback);
 
   // connect table and graph
   this->m_connect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
@@ -278,9 +283,11 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   connect(this->ui->labelComboBox, SIGNAL(currentIndexChanged(QString)),
     this, SLOT(slotChangeLabel(QString)));
 
-  //layout strategy
-  connect(this->ui->strategyComboBox, SIGNAL(currentIndexChanged(QString)),
-    this, SLOT(slotChangeStrategy(QString)));
+  // radial rendering
+  connect(this->ui->radialCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableRadialLayout(int)));
+  connect(this->ui->radialSlider, SIGNAL(valueChanged(int)),
+    this, SLOT(slotChangeRadialLayout(int)));
 
   // back plane
   connect(this->ui->backCheckBox, SIGNAL(stateChanged(int)),
@@ -307,6 +314,8 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
       this->ui->scaleComboBox->addItem(name);
       }
     }
+
+  this->slotEnableScale(false);
 
   /*125   Connections->Connect(
    126     this->TableView->GetRepresentation(),
@@ -425,13 +434,32 @@ lineageViewer::~lineageViewer()
                                        void* callData)
  {
    vtkSelection* selection = reinterpret_cast<vtkSelection*>(callData);
-   // update selection and only look at the vertices
-   //here...
+
    if(selection)
    {
   	 // Create a new selection without edges
   	 vtkSelection* s = vtkSelection::New();
 
+  	 vtkSelectionNode* vertices = NULL;
+  	   	     vtkSelectionNode* edges = NULL;
+
+  	 int numberOfNodes = selection->GetNumberOfNodes();
+
+  	 for (int i = 0; i < numberOfNodes; i++)
+  	 {
+	     if(selection->GetNode(i)->GetFieldType() == vtkSelectionNode::VERTEX)
+	       {
+	       vertices = selection->GetNode(i);
+	       s->AddNode(selection->GetNode(i));
+	       std::cout << "VERTEX SELECTED" << std::endl;
+	       }
+	     else if(selection->GetNode(i)->GetFieldType() == vtkSelectionNode::EDGE)
+	       {
+	       edges = selection->GetNode(i);
+	       std::cout << "EDGES SELECTED" << std::endl;
+	       }
+  	 }
+/*
   	 vtkSelectionNode* vertices;
   	     vtkSelectionNode* edges;
   	     if(selection->GetNode(0)->GetFieldType() == vtkSelectionNode::VERTEX)
@@ -453,7 +481,9 @@ lineageViewer::~lineageViewer()
   	       {
   	       edges = selection->GetNode(1);
   	       }
-
+*//*
+     if(vertices)
+     {
   	     vtkIdTypeArray* vertexList = vtkIdTypeArray::SafeDownCast(vertices->GetSelectionList());
   	     std::cout << "There are " << vertexList->GetNumberOfTuples() << " vertices selected." << std::endl;
 
@@ -467,6 +497,10 @@ lineageViewer::~lineageViewer()
   	       }
 
   	     std::cout << std::endl;
+
+     }
+  	     if(edges)
+  	     {
   	     vtkIdTypeArray* edgeList = vtkIdTypeArray::SafeDownCast(edges->GetSelectionList());
   	     std::cout << "There are " << edgeList->GetNumberOfTuples() << " edges selected." << std::endl;
   	     if(edgeList->GetNumberOfTuples() > 0)
@@ -479,12 +513,13 @@ lineageViewer::~lineageViewer()
   	       std::cout << edgeList->GetValue(i) << " ";
   	       }
   	     std::cout << std::endl;
-
+  	     }
+  	     // should add edges somewhere here...
   	     this->m_treeTableView->GetRepresentation()->GetAnnotationLink()->
-  	       SetCurrentSelection(selection);
-  	     this->m_treeGraphView->GetRepresentation()->GetAnnotationLink()->
   	       SetCurrentSelection(s);
-
+  	     this->m_treeGraphView->GetRepresentation()->GetAnnotationLink()->
+  	       SetCurrentSelection(selection);
+*/
   	     this->m_treeTableView->Update();
   	     this->m_treeGraphView->Render();
    }
@@ -560,16 +595,39 @@ lineageViewer::~lineageViewer()
  //----------------------------------------------------------------------------
 
  //----------------------------------------------------------------------------
- void lineageViewer::slotChangeStrategy(QString array)
+ void lineageViewer::slotEnableRadialLayout(int state)
  {
- this->m_treeGraphView->SetLayoutStrategy(array.toLocal8Bit().data());
+	 if(!state)
+	 {
+		 this->m_treeLayoutStrategy->SetAngle(90);
+	 }
+	 else
+	 {
+		 this->m_treeLayoutStrategy->SetAngle( this->ui->radialSlider->value() );
+	 }
 
- //update visu
- this->m_treeGraphView->ResetCamera();
-   this->m_treeGraphView->Render();
+	  //radial layout
+	 this->m_treeLayoutStrategy->SetRadial(state);
+
+	  //update visu
+	  this->m_treeGraphView->ResetCamera();
+	  this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
 
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeRadialLayout(int angle)
+ {
+	 if(this->ui->radialCheckBox->isChecked() )
+	 {
+	 // change the layout angle
+	 this->m_treeLayoutStrategy->SetAngle( static_cast<double>(angle) );
+
+	  //update visu
+	  this->m_treeGraphView->ResetCamera();
+	  this->m_treeGraphView->Render();
+	 }
+ }
  //----------------------------------------------------------------------------
  void lineageViewer::slotEnableBackPlane(int state)
  {

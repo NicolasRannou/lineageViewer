@@ -113,7 +113,8 @@ public slots:
   void slotEnableLabel(int state);
   void slotChangeLabel(QString array);
 
-  void slotChangeStrategy(QString array);
+  void slotEnableRadialLayout(int state);
+  void slotChangeRadialLayout(int angle);
 
   void slotEnableBackPlane(int state);
 /*
