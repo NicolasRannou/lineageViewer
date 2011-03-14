@@ -238,7 +238,8 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->m_treeLayoutStrategy->SetAngle(90);
   this->m_treeLayoutStrategy->SetRadial(false);
   // Log
-  //this->m_treeLayoutStrategy->SetLogSpacingValue(1);
+  this->m_treeLayoutStrategy->SetLogSpacingValue(1);
+
   this->m_treeGraphView->SetLayoutStrategy(this->m_treeLayoutStrategy);
 
   // create the back plane
@@ -288,6 +289,12 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
     this, SLOT(slotEnableRadialLayout(int)));
   connect(this->ui->radialSlider, SIGNAL(valueChanged(int)),
     this, SLOT(slotChangeRadialLayout(int)));
+
+  // log rendering
+  connect(this->ui->logCheckBox, SIGNAL(stateChanged(int)),
+    this, SLOT(slotEnableLog(int)));
+  connect(this->ui->logSpinBox, SIGNAL(valueChanged(double)),
+    this, SLOT(slotChangeLog(double)));
 
   // back plane
   connect(this->ui->backCheckBox, SIGNAL(stateChanged(int)),
@@ -621,13 +628,48 @@ lineageViewer::~lineageViewer()
 	 if(this->ui->radialCheckBox->isChecked() )
 	 {
 	 // change the layout angle
-	 this->m_treeLayoutStrategy->SetAngle( static_cast<double>(angle) );
+	 this->m_treeLayoutStrategy->SetAngle( angle );
 
 	  //update visu
 	  this->m_treeGraphView->ResetCamera();
 	  this->m_treeGraphView->Render();
 	 }
  }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotEnableLog(int state)
+ {
+	 if(!state)
+	 {
+		 this->m_treeLayoutStrategy->SetLogSpacingValue(1);
+	 }
+	 else
+	 {
+		 this->m_treeLayoutStrategy->SetLogSpacingValue( this->ui->logSpinBox->value() );
+	 }
+
+	  //update visu
+	  this->m_treeGraphView->ResetCamera();
+	  this->m_treeGraphView->Render();
+ }
+ //----------------------------------------------------------------------------
+
+ //----------------------------------------------------------------------------
+ void lineageViewer::slotChangeLog(double angle)
+ {
+	 if(this->ui->logCheckBox->isChecked() )
+	 {
+	 // change the layout angle
+	 this->m_treeLayoutStrategy->SetLogSpacingValue( angle );
+
+	  //update visu
+	  this->m_treeGraphView->ResetCamera();
+	  this->m_treeGraphView->Render();
+	 }
+ }
+ //----------------------------------------------------------------------------
+
  //----------------------------------------------------------------------------
  void lineageViewer::slotEnableBackPlane(int state)
  {

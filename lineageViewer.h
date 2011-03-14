@@ -116,6 +116,9 @@ public slots:
   void slotEnableRadialLayout(int state);
   void slotChangeRadialLayout(int angle);
 
+  void slotEnableLog(int state);
+  void slotChangeLog(double angle);
+
   void slotEnableBackPlane(int state);
 /*
   void slotChangeLabel(QString array);
