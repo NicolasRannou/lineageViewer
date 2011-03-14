@@ -65,7 +65,6 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   vtkIdType i = graph->AddChild(f);
 
   // First array: first column of the graph
-
   vtkSmartPointer<vtkStringArray> cellType =
       vtkSmartPointer<vtkStringArray>::New();
   cellType->SetName("name");
@@ -79,7 +78,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   cellType->InsertValue(h, "TypeH");
   cellType->InsertValue(i, "TypeI");
   graph->GetVertexData()->AddArray(cellType);
-  graph->GetEdgeData()->AddArray(cellType);
+  //graph->GetEdgeData()->AddArray(cellType);
 
   vtkSmartPointer<vtkPoints> points =
       vtkSmartPointer<vtkPoints>::New();
@@ -108,8 +107,6 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   end->InsertValue(i, 37);
   graph->GetVertexData()->AddArray(end);
 
-  //graph->GetEdgeData()->AddArray(end);
-
   vtkSmartPointer<vtkDoubleArray> xPos =
       vtkSmartPointer<vtkDoubleArray>::New();
   xPos->SetName("XPos");
@@ -122,8 +119,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   xPos->InsertValue(g, 70);
   xPos->InsertValue(h, 116);
   xPos->InsertValue(i, 119);
-  graph->AddArray(xPos);
-  //graph->GetEdgeData()->AddArray(xPos);
+  graph->GetVertexData()->AddArray(xPos);
 
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
@@ -403,6 +399,7 @@ lineageViewer::~lineageViewer()
 	  (state ? this->ui->scaleComboBox->currentText().toLocal8Bit().data() : NULL);
 
 	  //update visu
+	  this->m_treeGraphView->ResetCamera();
 	  this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
@@ -413,6 +410,7 @@ lineageViewer::~lineageViewer()
  this->m_treeLayoutStrategy->SetDistanceArrayName(array.toLocal8Bit().data());
 
  //update visu
+   this->m_treeGraphView->ResetCamera();
    this->m_treeGraphView->Render();
  }
  //----------------------------------------------------------------------------
