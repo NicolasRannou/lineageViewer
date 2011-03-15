@@ -5,6 +5,8 @@
 
 #include "vtkSmartPointer.h"
 
+class vtkObject;
+
 // Forward Qt class declarations
 class Ui_lineageViewer;
 //table view
@@ -12,14 +14,18 @@ class vtkQtTreeView;
 //graph view
 class vtkGraphLayoutView;
 class vtkTreeLayoutStrategy;
+class vtkLookupTable;
+
 // connection between graph and table
 class vtkAnnotationLink;
 class vtkEventQtSlotConnect;
 
-class vtkObject;
+class vtkMutableDirectedGraph;
+class vtkTree;
 
-class vtkLookupTable;
 
+
+// EXPERIMENTAL
 // back plane
 class vtkDelaunay2D;
 class vtkGraphToPolyData;
@@ -32,11 +38,51 @@ class lineageViewer : public QMainWindow
 
 public:
 
-  // Constructor/Destructor
   lineageViewer( QWidget * iParent = 0, Qt::WindowFlags iFlags = 0 );
   ~lineageViewer();
 
-public slots:
+  vtkSmartPointer<vtkMutableDirectedGraph> CreateGraph();
+
+private:
+
+  /*
+   *
+   */
+  void ConfigureGraphView(vtkMutableDirectedGraph* iGraph);
+  /*
+   *
+   */
+  void ConfigureTableView(vtkTree* iTree);
+
+  /*
+   *
+   */
+  void ConnectQtButtons();
+  /*
+   *
+   */
+  void FillQtComboBoxes( vtkMutableDirectedGraph* iGraph );
+
+
+  vtkSmartPointer<vtkQtTreeView>         m_treeTableView;
+  vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
+  vtkSmartPointer<vtkAnnotationLink>     m_annotationLink;
+  vtkSmartPointer<vtkEventQtSlotConnect> m_connect;
+  vtkSmartPointer<vtkLookupTable>        m_lut;
+  vtkSmartPointer<vtkTreeLayoutStrategy> m_treeLayoutStrategy;
+
+  // Experimental stuff...
+  vtkSmartPointer<vtkDelaunay2D>         m_backPlane;
+  vtkSmartPointer<vtkGraphToPolyData>    m_graphToPolyData;
+  vtkSmartPointer<vtkPolyDataMapper>     m_planeMapper;
+  vtkSmartPointer<vtkActor>              m_planeActor;
+
+  Ui_lineageViewer *ui;
+
+private slots:
+
+  void selectionChanged(vtkObject*, unsigned long,void* ,void* );
+
   void slotEnableScale(int state);
   void slotChangeScale(QString array);
 
@@ -53,29 +99,6 @@ public slots:
   void slotChangeLog(double angle);
 
   void slotEnableBackPlane(int state);
-
-protected:
-
-protected slots:
-
-  // Description:
-  // Called when selection changed in the Qt tree view
-  void selectionChanged(vtkObject*, unsigned long,void* ,void* );
-
-private:
-  vtkSmartPointer<vtkQtTreeView>         m_treeTableView;
-  vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
-  vtkSmartPointer<vtkAnnotationLink>     m_annotationLink;
-  vtkSmartPointer<vtkEventQtSlotConnect> m_connect;
-  vtkSmartPointer<vtkLookupTable>        m_lut;
-  vtkSmartPointer<vtkTreeLayoutStrategy> m_treeLayoutStrategy;
-  vtkSmartPointer<vtkDelaunay2D>         m_backPlane;
-  vtkSmartPointer<vtkGraphToPolyData>    m_graphToPolyData;
-  vtkSmartPointer<vtkPolyDataMapper>     m_planeMapper;
-  vtkSmartPointer<vtkActor>              m_planeActor;
-
-  // Designer form
-  Ui_lineageViewer *ui;
 };
 
 #endif // lineageViewer_H
