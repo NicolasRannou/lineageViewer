@@ -41,6 +41,8 @@
 #include "vtkRendererCollection.h"
 
 //reader
+#include <QFileDialog>
+#include <QString>
 #include "vtkTreeReader.h"
 
 //----------------------------------------------------------------------------
@@ -52,14 +54,17 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
 
+  QString file = QFileDialog::getOpenFileName(NULL, tr("Select a lineage"));
+
   vtkSmartPointer<vtkTreeReader> reader =
       vtkSmartPointer<vtkTreeReader>::New();
-  reader->SetFileName("/home/nr52/Desktop/lineages/lineage_23.vtk");
+  reader->SetFileName(file.toLocal8Bit().data());
   reader->Update();
 
 
   vtkSmartPointer<vtkMutableDirectedGraph> graph = vtkSmartPointer<vtkMutableDirectedGraph>::New();
-  graph->CheckedDeepCopy(reader->GetOutput());//this->CreateGraph();
+  graph->CheckedDeepCopy(reader->GetOutput());
+  //this->CreateGraph();
 
   // we need a tree as input for the table
   vtkSmartPointer<vtkTree> tree =
