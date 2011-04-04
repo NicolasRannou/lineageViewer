@@ -40,6 +40,9 @@
 #include "vtkActor.h"
 #include "vtkRendererCollection.h"
 
+//reader
+#include "vtkTreeReader.h"
+
 //----------------------------------------------------------------------------
 // Constructor
 lineageViewer::
@@ -49,12 +52,19 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
 
-  vtkSmartPointer<vtkMutableDirectedGraph> graph = this->CreateGraph();
+  vtkSmartPointer<vtkTreeReader> reader =
+      vtkSmartPointer<vtkTreeReader>::New();
+  reader->SetFileName("/home/nr52/Desktop/lineages/lineage_23.vtk");
+  reader->Update();
+
+
+  vtkSmartPointer<vtkMutableDirectedGraph> graph = vtkSmartPointer<vtkMutableDirectedGraph>::New();
+  graph->CheckedDeepCopy(reader->GetOutput());//this->CreateGraph();
 
   // we need a tree as input for the table
   vtkSmartPointer<vtkTree> tree =
     vtkSmartPointer<vtkTree>::New();
-  tree->CheckedShallowCopy(graph);
+  tree->CheckedDeepCopy(reader->GetOutput());
 
   //Create the table View
   this->m_treeTableView          = vtkSmartPointer<vtkQtTreeView>::New();
