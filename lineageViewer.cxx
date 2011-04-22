@@ -3,10 +3,6 @@
 #include "ui_lineageViewer.h"
 #include "lineageViewer.h"
 
-#include <QDebug>
-
-#include "vtkAdjacentVertexIterator.h"
-
 // QT  general
 #include <QGridLayout>
 
@@ -22,6 +18,7 @@
 #include "vtkViewTheme.h"
 
 // create the tree
+#include "vtkAdjacentVertexIterator.h"
 #include "vtkMutableDirectedGraph.h"
 #include "vtkStringArray.h"
 #include "vtkDoubleArray.h"
@@ -257,11 +254,8 @@ void lineageViewer::slotAddLineage()
   treePair.second = tree;
   m_ListOfTrees.push_back(treePair);
 
-    std::cout << "Add lineage" << std::endl;
-
   if(!m_NumberOfLineages)
     {
-    std::cout << "Single lineage" << std::endl;
     this->m_treeTableView->SetShowRootNode(true);
 
     m_Graph->CheckedDeepCopy(tree);
@@ -282,12 +276,9 @@ void lineageViewer::slotAddLineage()
     // fill the new graph
     std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
             it = m_ListOfTrees.begin();
-    int end = 1;
+
     while(it != m_ListOfTrees.end())
       {
-      std::cout << "Lineage found" << std::endl;
-      qDebug() << it->first;
-
       UpdateTree( rootID,                // new ID
                   it->second->GetRoot(), // old ID
                   it->second,            // old graph
@@ -295,7 +286,6 @@ void lineageViewer::slotAddLineage()
                   id);                   // Track ID array
 
       ++it;
-      ++end;
       }
 
     newGraph->GetVertexData()->AddArray(id);
@@ -321,9 +311,6 @@ void lineageViewer::UpdateTree(vtkIdType iParentID,
                                vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph,
                                vtkDoubleArray* iTrackIDArray)
 {
-  std::cout<< "new root:"<< iParentID << std::endl;
-  std::cout<< "old root:"<< iOldID << std::endl;
-
   // build new tree
   vtkIdType newRoot = iNewGraph->AddChild(iParentID);
 
