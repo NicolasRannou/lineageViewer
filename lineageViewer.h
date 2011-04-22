@@ -48,11 +48,11 @@ private:
   /*
    *
    */
-  void ConfigureGraphView(vtkMutableDirectedGraph* iGraph);
+  void ConfigureGraphView();
   /*
    *
    */
-  void ConfigureTableView(vtkTree* iTree);
+  void ConfigureTableView();
 
   /*
    *
@@ -61,8 +61,11 @@ private:
   /*
    *
    */
-  void FillQtComboBoxes( vtkMutableDirectedGraph* iGraph );
+  void FillQtComboBoxes();
 
+
+  vtkSmartPointer<vtkTree> m_Tree;
+  vtkSmartPointer<vtkMutableDirectedGraph> m_Graph;
 
   vtkSmartPointer<vtkQtTreeView>         m_treeTableView;
   vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;
@@ -80,6 +83,8 @@ private:
   Ui_lineageViewer *ui;
 
 private slots:
+
+    void slotLoadLineage();
 
   void selectionChanged(vtkObject*, unsigned long,void* ,void* );
 

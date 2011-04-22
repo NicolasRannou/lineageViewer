@@ -54,31 +54,21 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
 
-  QString file = QFileDialog::getOpenFileName(NULL, tr("Select a lineage"));
-
-  vtkSmartPointer<vtkTreeReader> reader =
-      vtkSmartPointer<vtkTreeReader>::New();
-  reader->SetFileName(file.toLocal8Bit().data());
-  reader->Update();
-
-
-  vtkSmartPointer<vtkMutableDirectedGraph> graph = vtkSmartPointer<vtkMutableDirectedGraph>::New();
-  graph->CheckedDeepCopy(reader->GetOutput());
-  //this->CreateGraph();
+  // we nee a graph as input of the graph view
+  m_Graph = vtkSmartPointer<vtkMutableDirectedGraph>::New();
 
   // we need a tree as input for the table
-  vtkSmartPointer<vtkTree> tree =
-    vtkSmartPointer<vtkTree>::New();
-  tree->CheckedDeepCopy(reader->GetOutput());
+  m_Tree = vtkSmartPointer<vtkTree>::New();
 
   //Create the table View
   this->m_treeTableView          = vtkSmartPointer<vtkQtTreeView>::New();
-  this->ConfigureTableView( tree );
+  this->ConfigureTableView();
 
   //Create the graph View
-  this->m_treeGraphView =
-    vtkSmartPointer<vtkGraphLayoutView>::New();
-  this->ConfigureGraphView( graph );
+  this->m_treeGraphView = vtkSmartPointer<vtkGraphLayoutView>::New();
+  this->ConfigureGraphView();
+
+  this->FillQtComboBoxes();
 
   // add link table and graph annotations
   this->m_annotationLink = vtkSmartPointer<vtkAnnotationLink>::New();
@@ -96,17 +86,15 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
 
   this->ConnectQtButtons();
 
-  this->FillQtComboBoxes( graph );
-
   /////// EXPERIMENTAL ///////
 
   // create the back plane
-  this->m_backPlane = vtkSmartPointer<vtkDelaunay2D>::New();
-  this->m_graphToPolyData = vtkSmartPointer<vtkGraphToPolyData>::New();
-  this->m_graphToPolyData->SetInput(graph);
-  this->m_graphToPolyData->Update();
-  this->m_planeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-  this->m_planeActor = vtkSmartPointer<vtkActor>::New();
+  //this->m_backPlane = vtkSmartPointer<vtkDelaunay2D>::New();
+  //this->m_graphToPolyData = vtkSmartPointer<vtkGraphToPolyData>::New();
+  //this->m_graphToPolyData->SetInput(graph);
+  //this->m_graphToPolyData->Update();
+  //this->m_planeMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  //this->m_planeActor = vtkSmartPointer<vtkActor>::New();
 }
 //----------------------------------------------------------------------------
 
@@ -117,9 +105,9 @@ lineageViewer::~lineageViewer()
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-void lineageViewer::ConfigureGraphView(vtkMutableDirectedGraph* iGraph)
+void lineageViewer::ConfigureGraphView()
 {
-  this->m_treeGraphView->AddRepresentationFromInput(iGraph);
+  this->m_treeGraphView->AddRepresentationFromInput(m_Graph);
   this->m_treeGraphView->SetEdgeSelection(false);
   this->m_treeGraphView->SetLayoutStrategyToTree();
   this->m_treeGraphView->ResetCamera();
@@ -151,11 +139,11 @@ void lineageViewer::ConfigureGraphView(vtkMutableDirectedGraph* iGraph)
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-void lineageViewer::ConfigureTableView(vtkTree* iTree)
+void lineageViewer::ConfigureTableView()
 {
   QGridLayout* tableLayout = new QGridLayout(this->ui->tableFrame);
   tableLayout->addWidget(this->m_treeTableView->GetWidget());
-  this->m_treeTableView->AddRepresentationFromInput(iTree);
+  this->m_treeTableView->AddRepresentationFromInput(m_Tree);
   this->m_treeTableView->Update();
 }
 //----------------------------------------------------------------------------
@@ -163,6 +151,10 @@ void lineageViewer::ConfigureTableView(vtkTree* iTree)
 //----------------------------------------------------------------------------
 void lineageViewer::ConnectQtButtons()
 {
+  // load a lineage
+  connect(this->ui->loadLineagePushButton, SIGNAL(pressed()),
+    this, SLOT(slotLoadLineage()));
+
   // color coding
   connect(this->ui->colorCheckBox, SIGNAL(stateChanged(int)),
     this, SLOT(slotEnableColorCode(int)));
@@ -200,11 +192,11 @@ void lineageViewer::ConnectQtButtons()
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-void lineageViewer::FillQtComboBoxes( vtkMutableDirectedGraph* iGraph )
+void lineageViewer::FillQtComboBoxes()
 {
   // Fill combo boxes
   // Update combo boxes (fill content with arrays names)
-  int numberOfArrays = iGraph->GetVertexData()->GetNumberOfArrays();
+  int numberOfArrays = m_Graph->GetVertexData()->GetNumberOfArrays();
   this->ui->colorComboBox->clear();
   this->ui->scaleComboBox->clear();
   this->ui->labelComboBox->clear();
@@ -213,10 +205,10 @@ void lineageViewer::FillQtComboBoxes( vtkMutableDirectedGraph* iGraph )
   for(int i=0;i<numberOfArrays; i++)
     {
     const char* name =
-        iGraph->GetVertexData()->GetArrayName(i);
+        m_Graph->GetVertexData()->GetArrayName(i);
     this->ui->labelComboBox->addItem(name);
     // if data array (i.e. numbers), add it
-    if(iGraph->GetVertexData()->GetArray(name))
+    if(m_Graph->GetVertexData()->GetArray(name))
       {
       this->ui->colorComboBox->addItem(name);
       this->ui->scaleComboBox->addItem(name);
@@ -238,6 +230,28 @@ void lineageViewer::selectionChanged(vtkObject*,
   this->m_treeTableView->Update();
   this->m_treeGraphView->Render();
  }
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+void lineageViewer::slotLoadLineage()
+{
+  QString file = QFileDialog::getOpenFileName(NULL, tr("Select a lineage"));
+
+  vtkSmartPointer<vtkTreeReader> reader =
+      vtkSmartPointer<vtkTreeReader>::New();
+  reader->SetFileName(file.toLocal8Bit().data());
+  reader->Update();
+
+  m_Graph->CheckedDeepCopy(reader->GetOutput());
+  m_Tree->CheckedDeepCopy(reader->GetOutput());
+
+  this->ConfigureTableView();
+  this->ConfigureGraphView();
+
+  this->FillQtComboBoxes();
+
+  // bug on labels...
+}
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
