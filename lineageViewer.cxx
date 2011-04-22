@@ -301,7 +301,6 @@ void lineageViewer::UpdateGraph()
   newGraph->GetVertexData()->AddArray(id);
   newGraph->GetVertexData()->AddArray(depth);
 
-  this->m_treeTableView->SetShowRootNode(false);
 
   m_Graph->CheckedDeepCopy(newGraph);
   m_Tree->CheckedDeepCopy(newGraph);
