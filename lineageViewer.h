@@ -63,9 +63,18 @@ private:
    */
   void FillQtComboBoxes();
 
+  void UpdateTree(vtkIdType iParentID,
+                  vtkIdType iOldID,
+                  vtkSmartPointer<vtkTree> iOldTree,
+                  vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph);
+
+  unsigned int m_NumberOfLineages;
 
   vtkSmartPointer<vtkTree> m_Tree;
   vtkSmartPointer<vtkMutableDirectedGraph> m_Graph;
+
+  std::list< std::pair<
+    QString,vtkSmartPointer<vtkTree> > > m_ListOfTrees;
 
   vtkSmartPointer<vtkQtTreeView>         m_treeTableView;
   vtkSmartPointer<vtkGraphLayoutView>    m_treeGraphView;

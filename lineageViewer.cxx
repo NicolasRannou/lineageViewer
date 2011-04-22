@@ -3,6 +3,10 @@
 #include "ui_lineageViewer.h"
 #include "lineageViewer.h"
 
+#include <QDebug>
+
+#include "vtkAdjacentVertexIterator.h"
+
 // QT  general
 #include <QGridLayout>
 
@@ -49,7 +53,7 @@
 // Constructor
 lineageViewer::
 lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
-  QMainWindow( iParent, iFlags )
+  QMainWindow( iParent, iFlags ), m_NumberOfLineages(0)
 {
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
@@ -59,6 +63,7 @@ lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
 
   // we need a tree as input for the table
   m_Tree = vtkSmartPointer<vtkTree>::New();
+  m_Tree->CheckedDeepCopy(m_Graph);
 
   //Create the table View
   this->m_treeTableView          = vtkSmartPointer<vtkQtTreeView>::New();
@@ -144,6 +149,7 @@ void lineageViewer::ConfigureTableView()
   QGridLayout* tableLayout = new QGridLayout(this->ui->tableFrame);
   tableLayout->addWidget(this->m_treeTableView->GetWidget());
   this->m_treeTableView->AddRepresentationFromInput(m_Tree);
+  this->m_treeTableView->SetShowRootNode(false);
   this->m_treeTableView->Update();
 }
 //----------------------------------------------------------------------------
@@ -242,15 +248,80 @@ void lineageViewer::slotAddLineage()
   reader->SetFileName(file.toLocal8Bit().data());
   reader->Update();
 
-  m_Graph->CheckedDeepCopy(reader->GetOutput());
-  m_Tree->CheckedDeepCopy(reader->GetOutput());
+  vtkSmartPointer<vtkTree> tree =
+      vtkSmartPointer<vtkTree>::New();
+  tree->CheckedDeepCopy(reader->GetOutput());
 
-  this->ConfigureTableView();
-  this->ConfigureGraphView();
+  // update list of graphs
+  std::pair<QString, vtkSmartPointer<vtkTree> > treePair;
+  treePair.first = file;
+  treePair.second = tree;
+  m_ListOfTrees.push_back(treePair);
 
-  this->FillQtComboBoxes();
+    std::cout << "Add lineage" << std::endl;
 
-  this->m_treeTableView->SetShowRootNode(true);
+  if(!m_NumberOfLineages)
+    {
+    m_Graph->CheckedDeepCopy(tree);
+    m_Tree->CheckedDeepCopy(tree);
+
+    this->ConfigureTableView();
+    this->ConfigureGraphView();
+
+    this->FillQtComboBoxes();
+    std::cout << "Single lineage" << std::endl;
+    }
+  else
+    {
+    // max->9 lineages
+
+    // check arrays
+
+    // create New graph
+    vtkSmartPointer<vtkMutableDirectedGraph> newGraph =
+        vtkSmartPointer<vtkMutableDirectedGraph>::New();
+    vtkIdType rootID = newGraph->AddVertex();
+
+    // fill the new graph
+    std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
+            it = m_ListOfTrees.begin();
+    int end = 1;
+    while(it != m_ListOfTrees.end())
+      {
+      std::cout << "Lineage found" << std::endl;
+      qDebug() << it->first;
+
+      UpdateTree( newGraph->AddChild(rootID), // new ID
+                  it->second->GetRoot(), // old ID
+                  it->second, // old graph
+                  newGraph);  // new graph
+
+      ++it;
+      ++end;
+      }
+    }
+  ++m_NumberOfLineages;
+}
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+void lineageViewer::UpdateTree(vtkIdType iParentID,
+                               vtkIdType iOldID,
+                               vtkSmartPointer<vtkTree> iOldTree,
+                               vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph)
+{
+  vtkIdType newRoot = iNewGraph->AddChild(iParentID);
+
+  vtkAdjacentVertexIterator * it ;
+  iOldTree->GetChildren(iOldID, it);
+
+  while(it->HasNext())
+    {
+    std::cout << it->GetVertex() << std::endl;
+    UpdateTree(newRoot, it->GetVertex() , iOldTree, iNewGraph);
+    it->Next();
+    }
+
 }
 //----------------------------------------------------------------------------
 
