@@ -8,15 +8,8 @@ if(NOT VTK_DIR)
 endif()
 include(${VTK_USE_FILE})
 
-# use what QVTK built with
-set(QT_MOC_EXECUTABLE ${VTK_QT_MOC_EXECUTABLE} CACHE FILEPATH "")
-set(QT_UIC_EXECUTABLE ${VTK_QT_UIC_EXECUTABLE} CACHE FILEPATH "")
-set(QT_QMAKE_EXECUTABLE ${VTK_QT_QMAKE_EXECUTABLE} CACHE FILEPATH "")
-set(DESIRED_QT_VERSION ${VTK_DESIRED_QT_VERSION} CACHE FILEPATH "")
-
-find_package(Qt4 REQUIRED)
+find_package(Qt4 4.5 REQUIRED QtCore QtGui)
 include(${QT_USE_FILE})
-
 
 # Use the include path and library for Qt that is used by VTK.
 include_directories(
