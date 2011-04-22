@@ -151,9 +151,9 @@ void lineageViewer::ConfigureTableView()
 //----------------------------------------------------------------------------
 void lineageViewer::ConnectQtButtons()
 {
-  // load a lineage
-  connect(this->ui->loadLineagePushButton, SIGNAL(pressed()),
-    this, SLOT(slotLoadLineage()));
+  // add a lineage
+  connect(this->ui->addLineagePushButton, SIGNAL(pressed()),
+    this, SLOT(slotAddLineage()));
 
   // color coding
   connect(this->ui->colorCheckBox, SIGNAL(stateChanged(int)),
@@ -233,7 +233,7 @@ void lineageViewer::selectionChanged(vtkObject*,
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-void lineageViewer::slotLoadLineage()
+void lineageViewer::slotAddLineage()
 {
   QString file = QFileDialog::getOpenFileName(NULL, tr("Select a lineage"));
 
@@ -250,7 +250,7 @@ void lineageViewer::slotLoadLineage()
 
   this->FillQtComboBoxes();
 
-  // bug on labels...
+  this->m_treeTableView->SetShowRootNode(true);
 }
 //----------------------------------------------------------------------------
 

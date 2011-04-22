@@ -84,7 +84,7 @@ private:
 
 private slots:
 
-    void slotLoadLineage();
+    void slotAddLineage();
 
   void selectionChanged(vtkObject*, unsigned long,void* ,void* );
 
