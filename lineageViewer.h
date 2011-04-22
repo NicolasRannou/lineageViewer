@@ -43,8 +43,6 @@ public:
   lineageViewer( QWidget * iParent = 0, Qt::WindowFlags iFlags = 0 );
   ~lineageViewer();
 
-  vtkSmartPointer<vtkMutableDirectedGraph> CreateGraph();
-
 private:
 
   /*
@@ -72,7 +70,7 @@ private:
                   vtkDoubleArray* iTrackIDArray,
                   unsigned int iDepth, vtkDoubleArray* iDepthArray);
 
-  unsigned int m_NumberOfLineages;
+  void UpdateGraph();
 
   vtkSmartPointer<vtkTree> m_Tree;
   vtkSmartPointer<vtkMutableDirectedGraph> m_Graph;
@@ -97,7 +95,8 @@ private:
 
 private slots:
 
-    void slotAddLineage();
+  void slotAddLineage();
+  void slotDeleteLineage();
 
   void selectionChanged(vtkObject*, unsigned long,void* ,void* );
 

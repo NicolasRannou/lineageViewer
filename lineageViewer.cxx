@@ -6,6 +6,10 @@
 // QT  general
 #include <QGridLayout>
 
+// Delete Lineage
+#include <QInputDialog>
+#include <QStringList>
+
 // tab view
 #include <vtkQtTreeView.h>
 
@@ -50,7 +54,7 @@
 // Constructor
 lineageViewer::
 lineageViewer( QWidget* iParent, Qt::WindowFlags iFlags ) :
-  QMainWindow( iParent, iFlags ), m_NumberOfLineages(0)
+  QMainWindow( iParent, iFlags )
 {
   this->ui = new Ui_lineageViewer;
   this->ui->setupUi(this);
@@ -157,6 +161,9 @@ void lineageViewer::ConnectQtButtons()
   connect(this->ui->addLineagePushButton, SIGNAL(pressed()),
     this, SLOT(slotAddLineage()));
 
+  connect(this->ui->deleteLineagePushButton, SIGNAL(pressed()),
+    this, SLOT(slotDeleteLineage()));
+
   // color coding
   connect(this->ui->colorCheckBox, SIGNAL(stateChanged(int)),
     this, SLOT(slotEnableColorCode(int)));
@@ -254,59 +261,55 @@ void lineageViewer::slotAddLineage()
   treePair.second = tree;
   m_ListOfTrees.push_back(treePair);
 
-  if(!m_NumberOfLineages)
+  UpdateGraph();
+}
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+void lineageViewer::UpdateGraph()
+{
+  // create New graph
+  vtkSmartPointer<vtkMutableDirectedGraph> newGraph =
+      vtkSmartPointer<vtkMutableDirectedGraph>::New();
+  vtkIdType rootID = newGraph->AddVertex();
+
+  // info
+  vtkDoubleArray* id = vtkDoubleArray::New();
+  id->SetName("Track ID");
+  id->InsertValue(rootID, 0);
+
+  vtkDoubleArray* depth = vtkDoubleArray::New();
+  depth->SetName("Lineage Depth");
+  depth->InsertValue(rootID, 0);
+
+  // fill the new graph
+  std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
+          it = m_ListOfTrees.begin();
+
+  while(it != m_ListOfTrees.end())
     {
-    this->m_treeTableView->SetShowRootNode(true);
+    UpdateTree( rootID,                // new ID
+                it->second->GetRoot(), // old ID
+                it->second,            // old graph
+                newGraph,              // new graph
+                id,                    // Track ID array
+                1, depth);             // original depth, depth array
 
-    m_Graph->CheckedDeepCopy(tree);
-    m_Tree->CheckedDeepCopy(tree);
+    ++it;
     }
-  else
-    {
-    // create New graph
-    vtkSmartPointer<vtkMutableDirectedGraph> newGraph =
-        vtkSmartPointer<vtkMutableDirectedGraph>::New();
-    vtkIdType rootID = newGraph->AddVertex();
 
-    // info
-    vtkDoubleArray* id = vtkDoubleArray::New();
-    id->SetName("Track ID");
-    id->InsertValue(rootID, 0);
+  newGraph->GetVertexData()->AddArray(id);
+  newGraph->GetVertexData()->AddArray(depth);
 
-    vtkDoubleArray* depth = vtkDoubleArray::New();
-    depth->SetName("Lineage Depth");
-    depth->InsertValue(rootID, 0);
+  this->m_treeTableView->SetShowRootNode(false);
 
-    // fill the new graph
-    std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
-            it = m_ListOfTrees.begin();
-
-    while(it != m_ListOfTrees.end())
-      {
-      UpdateTree( rootID,                // new ID
-                  it->second->GetRoot(), // old ID
-                  it->second,            // old graph
-                  newGraph,              // new graph
-                  id,                    // Track ID array
-                  1, depth);             // original depth, depth array
-
-      ++it;
-      }
-
-    newGraph->GetVertexData()->AddArray(id);
-    newGraph->GetVertexData()->AddArray(depth);
-
-    this->m_treeTableView->SetShowRootNode(false);
-
-    m_Graph->CheckedDeepCopy(newGraph);
-    m_Tree->CheckedDeepCopy(newGraph);
-    }
+  m_Graph->CheckedDeepCopy(newGraph);
+  m_Tree->CheckedDeepCopy(newGraph);
 
   this->ConfigureTableView();
   this->ConfigureGraphView();
 
   this->FillQtComboBoxes();
-  ++m_NumberOfLineages;
 }
 //----------------------------------------------------------------------------
 
@@ -340,6 +343,44 @@ void lineageViewer::UpdateTree(vtkIdType iParentID,
                iDepth+1, iDepthArray);
     }
 
+}
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+void lineageViewer::slotDeleteLineage()
+{
+  bool ok;
+  QStringList lineages;
+
+  std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
+          it = m_ListOfTrees.begin();
+
+  while(it != m_ListOfTrees.end())
+    {
+    lineages << it->first;
+    ++it;
+    }
+
+  QString item =
+      QInputDialog::getItem(this,
+                            tr("Lineage selection"),
+                            tr("Please select the lineage you want to delete"),
+                            lineages, 0, false, &ok);
+
+  // Remove from the list
+  it = m_ListOfTrees.begin();
+  while(it != m_ListOfTrees.end())
+    {
+    if( ! it->first.compare(item) ) // compare returns 0 if QStrings are equal
+      {
+      m_ListOfTrees.erase(it);
+      break;
+      }
+    ++it;
+    }
+
+  // update the graph
+  UpdateGraph();
 }
 //----------------------------------------------------------------------------
 
@@ -499,80 +540,5 @@ void lineageViewer::slotEnableBackPlane(int state)
 
   //update visu
   this->m_treeGraphView->Render();
-}
-//----------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------
-vtkSmartPointer<vtkMutableDirectedGraph> lineageViewer::CreateGraph()
-{
-  vtkSmartPointer<vtkMutableDirectedGraph> graph =
-    vtkSmartPointer<vtkMutableDirectedGraph>::New();
-  vtkIdType a = graph->AddVertex();
-  vtkIdType b = graph->AddChild(a);
-  vtkIdType c = graph->AddChild(a);
-  vtkIdType d = graph->AddChild(b);
-  vtkIdType e = graph->AddChild(c);
-  vtkIdType f = graph->AddChild(c);
-  vtkIdType g = graph->AddChild(c);
-  vtkIdType h = graph->AddChild(f);
-  vtkIdType i = graph->AddChild(f);
-
-  // First array: first column of the graph
-  vtkSmartPointer<vtkStringArray> cellType =
-      vtkSmartPointer<vtkStringArray>::New();
-  cellType->SetName("name");
-  cellType->InsertValue(a, "TypeA");
-  cellType->InsertValue(b, "TypeB");
-  cellType->InsertValue(c, "TypeC");
-  cellType->InsertValue(d, "TypeD");
-  cellType->InsertValue(e, "TypeE");
-  cellType->InsertValue(f, "TypeF");
-  cellType->InsertValue(g, "TypeG");
-  cellType->InsertValue(h, "TypeH");
-  cellType->InsertValue(i, "TypeI");
-  graph->GetVertexData()->AddArray(cellType);
-
-  vtkSmartPointer<vtkPoints> points =
-      vtkSmartPointer<vtkPoints>::New();
-  points->InsertNextPoint(0.0, 0.5, 0.0);
-  points->InsertNextPoint(1.0, 0.0, 0.0);
-  points->InsertNextPoint(0.0, 1.0, 0.0);
-  points->InsertNextPoint(0.0, 0.0, 2.0);
-  points->InsertNextPoint(0.0, 10.0, 2.0);
-  points->InsertNextPoint(10.0, 0.0, 2.0);
-  points->InsertNextPoint(1.0, 3.0, 2.0);
-  points->InsertNextPoint(1.0, 20.0, 5.0);
-  points->InsertNextPoint(30.0, 1.0, 2.0);
-  graph->SetPoints(points);
-
-  vtkSmartPointer<vtkDoubleArray> end =
-      vtkSmartPointer<vtkDoubleArray>::New();
-  end->SetName("EndTime");
-  end->InsertValue(a, 10);
-  end->InsertValue(b, 15);
-  end->InsertValue(c, 16);
-  end->InsertValue(d, 25);
-  end->InsertValue(e, 27);
-  end->InsertValue(f, 28);
-  end->InsertValue(g, 30);
-  end->InsertValue(h, 43);
-  end->InsertValue(i, 37);
-  graph->GetVertexData()->AddArray(end);
-
-  vtkSmartPointer<vtkDoubleArray> xPos =
-      vtkSmartPointer<vtkDoubleArray>::New();
-  xPos->SetName("XPos");
-  xPos->InsertValue(a, 113);
-  xPos->InsertValue(b, 51);
-  xPos->InsertValue(c, 77);
-  xPos->InsertValue(d, 98);
-  xPos->InsertValue(e, 51);
-  xPos->InsertValue(f, 50);
-  xPos->InsertValue(g, 70);
-  xPos->InsertValue(h, 116);
-  xPos->InsertValue(i, 119);
-  graph->GetVertexData()->AddArray(xPos);
-
-  return graph;
 }
 //----------------------------------------------------------------------------
