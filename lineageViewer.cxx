@@ -273,6 +273,10 @@ void lineageViewer::slotAddLineage()
     id->SetName("Track ID");
     id->InsertValue(rootID, 0);
 
+    vtkDoubleArray* depth = vtkDoubleArray::New();
+    depth->SetName("Lineage Depth");
+    depth->InsertValue(rootID, 0);
+
     // fill the new graph
     std::list<std::pair<QString, vtkSmartPointer<vtkTree> > >::iterator
             it = m_ListOfTrees.begin();
@@ -283,12 +287,14 @@ void lineageViewer::slotAddLineage()
                   it->second->GetRoot(), // old ID
                   it->second,            // old graph
                   newGraph,              // new graph
-                  id);                   // Track ID array
+                  id,                    // Track ID array
+                  1, depth);             // original depth, depth array
 
       ++it;
       }
 
     newGraph->GetVertexData()->AddArray(id);
+    newGraph->GetVertexData()->AddArray(depth);
 
     this->m_treeTableView->SetShowRootNode(false);
 
@@ -309,7 +315,8 @@ void lineageViewer::UpdateTree(vtkIdType iParentID,
                                vtkIdType iOldID,
                                vtkSmartPointer<vtkTree> iOldTree,
                                vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph,
-                               vtkDoubleArray* iTrackIDArray)
+                               vtkDoubleArray* iTrackIDArray,
+                               unsigned int iDepth, vtkDoubleArray* iDepthArray)
 {
   // build new tree
   vtkIdType newRoot = iNewGraph->AddChild(iParentID);
@@ -319,6 +326,8 @@ void lineageViewer::UpdateTree(vtkIdType iParentID,
   double value = id->GetTuple1(iOldID);
   iTrackIDArray->InsertValue( newRoot, value );
 
+  iDepthArray->InsertValue(newRoot, iDepth);
+
   // go through tree
   vtkSmartPointer<vtkAdjacentVertexIterator> it =
       vtkSmartPointer<vtkAdjacentVertexIterator>::New();
@@ -326,7 +335,9 @@ void lineageViewer::UpdateTree(vtkIdType iParentID,
 
   while(it->HasNext())
     {
-    UpdateTree(newRoot, it->Next() , iOldTree, iNewGraph, iTrackIDArray);
+    UpdateTree(newRoot, it->Next() , iOldTree, iNewGraph,
+               iTrackIDArray,
+               iDepth+1, iDepthArray);
     }
 
 }

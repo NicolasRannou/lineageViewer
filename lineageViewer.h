@@ -69,7 +69,8 @@ private:
                   vtkIdType iOldID,
                   vtkSmartPointer<vtkTree> iOldTree,
                   vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph,
-                  vtkDoubleArray* iTrackIDArray);
+                  vtkDoubleArray* iTrackIDArray,
+                  unsigned int iDepth, vtkDoubleArray* iDepthArray);
 
   unsigned int m_NumberOfLineages;
 
