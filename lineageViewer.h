@@ -23,6 +23,8 @@ class vtkEventQtSlotConnect;
 class vtkMutableDirectedGraph;
 class vtkTree;
 
+class vtkDoubleArray;
+
 
 
 // EXPERIMENTAL
@@ -66,7 +68,8 @@ private:
   void UpdateTree(vtkIdType iParentID,
                   vtkIdType iOldID,
                   vtkSmartPointer<vtkTree> iOldTree,
-                  vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph);
+                  vtkSmartPointer<vtkMutableDirectedGraph> iNewGraph,
+                  vtkDoubleArray* iTrackIDArray);
 
   unsigned int m_NumberOfLineages;
 
