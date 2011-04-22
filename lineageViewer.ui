@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>607</width>
-    <height>637</height>
+    <width>617</width>
+    <height>583</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -109,24 +109,6 @@
            <enum>QFrame::Raised</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_15">
-           <item row="0" column="0">
-            <layout class="QGridLayout" name="gridLayout_13">
-             <item row="0" column="0">
-              <widget class="QPushButton" name="addLineagePushButton">
-               <property name="text">
-                <string>Add Lineage</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QPushButton" name="deleteLineagePushButton">
-               <property name="text">
-                <string>Delete Lineage</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
            <item row="1" column="0">
             <layout class="QGridLayout" name="gridLayout_7">
              <item row="0" column="0">
@@ -241,6 +223,24 @@
              </property>
             </widget>
            </item>
+           <item row="7" column="0">
+            <layout class="QGridLayout" name="gridLayout_13">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="addLineagePushButton">
+               <property name="text">
+                <string>Add Lineage</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QPushButton" name="deleteLineagePushButton">
+               <property name="text">
+                <string>Delete Lineage</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
           </layout>
          </widget>
         </item>
@@ -255,7 +255,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>607</width>
+     <width>617</width>
      <height>25</height>
     </rect>
    </property>
